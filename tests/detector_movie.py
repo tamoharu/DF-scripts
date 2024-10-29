@@ -7,6 +7,7 @@ from tqdm import tqdm
 import numpy as np
 import torch
 from DeepFake.face_detection.detector import RTDETRv2
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def process_frame(frame, model):
     debug_image = copy.deepcopy(frame)
@@ -28,25 +29,48 @@ def main():
     output_video_path = './output/output.mp4'
     providers = ['CUDAExecutionProvider'] if torch.cuda.is_available() else ['CPUExecutionProvider']
     model = RTDETRv2(model_file, providers)
+
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print(f"Error opening video file {video_path}")
         return
+
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     video_writer = cv2.VideoWriter(output_video_path, fourcc, fps, (frame_width, frame_height))
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    with tqdm(total=total_frames, desc="Processing Video Frames") as pbar:
+
+    frames = []
+    with tqdm(total=total_frames, desc="Reading Video Frames") as pbar:
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
-            processed_frame = process_frame(frame, model)
-            video_writer.write(processed_frame)
+            frames.append(frame)
             pbar.update(1)
     cap.release()
+
+    processed_frames = []
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        future_to_frame = {executor.submit(process_frame, frame, model): i for i, frame in enumerate(frames)}
+        with tqdm(total=total_frames, desc="Processing Video Frames") as pbar:
+            for future in as_completed(future_to_frame):
+                frame_index = future_to_frame[future]
+                try:
+                    processed_frame = future.result()
+                    processed_frames.append((frame_index, processed_frame))
+                except Exception as exc:
+                    print(f"Frame {frame_index} generated an exception: {exc}")
+                pbar.update(1)
+
+    processed_frames.sort(key=lambda x: x[0])
+    with tqdm(total=total_frames, desc="Writing Video Frames") as pbar:
+        for _, frame in processed_frames:
+            video_writer.write(frame)
+            pbar.update(1)
+
     video_writer.release()
     cv2.destroyAllWindows()
     print("Video processing completed!")

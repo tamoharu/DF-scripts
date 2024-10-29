@@ -162,7 +162,6 @@ class Box2Point:
             if angles[0] < angles[1]:
                 left_eye_point, right_eye_point = eyes_centers
             else:
-                print(angles)
                 left_eye_point, right_eye_point = eyes_centers[::-1]
             return left_eye_point, right_eye_point
         raise ValueError('Invalid eye_boxes')
