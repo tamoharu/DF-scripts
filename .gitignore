@@ -1,0 +1,16 @@
+.assets
+.idea
+.vscode
+**/venv/
+**/__pycache__/
+**/pyvenv.cfg
+**/local_cache/
+**/*.DS_Store
+**/*.onnx
+**/*.pth
+**/*.pt
+**/*.zip
+**/*.png
+**/*.jpg
+**/*.mp4
+**/*.mov
