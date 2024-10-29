@@ -26,7 +26,7 @@ def process_frame(frame, model):
 def main():
     model_file = '../models/rtdetrv2_large.onnx'
     video_path = './videos/bella.mp4'
-    output_video_path = './output/output.mp4'
+    output_video_path = './outputs/output.mp4'
     providers = ['CUDAExecutionProvider'] if torch.cuda.is_available() else ['CPUExecutionProvider']
     model = RTDETRv2(model_file, providers)
 
