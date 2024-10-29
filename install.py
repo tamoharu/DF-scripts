@@ -43,7 +43,7 @@ def download_and_extract(url, extract_to):
 
 def download_datasets():
     extract_to = './models/'
-    url = ''
+    url = 'https://github.com/tamoharu/DF-scripts/releases/download/models/model.zip'
     download_and_extract(url, extract_to)
 
 
